@@ -1,0 +1,278 @@
+# `99-custom.conf`
+
+## Overview
+
+`99-custom.conf` is a custom sysctl configuration file used to override default kernel parameters in **ArchPynux**. It is typically placed under:
+
+```
+/etc/sysctl.d/99-custom.conf
+```
+
+Files in `/etc/sysctl.d/` are parsed by `systemd-sysctl` at boot. The `99-` prefix ensures that this file is loaded **after most default configurations**, allowing it to override earlier settings.
+
+This file is intended to provide:
+
+* System-wide performance tuning
+* Memory management optimization
+* Security hardening defaults
+* Predictable behavior for development workloads (especially Python)
+
+---
+
+## Default Configuration (ArchPynux)
+
+```conf
+# Virtual Memory Tuning
+vm.swappiness = 10
+vm.vfs_cache_pressure = 50
+```
+
+---
+
+## `vm.swappiness`
+
+### Description
+
+`vm.swappiness` controls the kernel's tendency to move processes out of physical memory (RAM) and onto swap space.
+
+* Range: `0` to `100`
+* Default in most systems: `60`
+
+### Behavior
+
+* **Higher values (e.g., 60–100)**
+  → The kernel will aggressively swap memory pages to disk
+  → Frees RAM for filesystem cache
+
+* **Lower values (e.g., 0–20)**
+  → The kernel avoids swapping unless absolutely necessary
+  → Keeps processes in RAM longer
+
+### Why `vm.swappiness = 10` in ArchPynux
+
+ArchPynux is optimized for:
+
+* Development workloads (Python interpreters, virtual environments, compilers)
+* Low-latency execution
+* Reduced disk I/O
+
+Setting:
+
+```conf
+vm.swappiness = 10
+```
+
+ensures:
+
+* Minimal swapping under normal conditions
+* Better responsiveness during builds and runtime execution
+* Reduced SSD wear (important for development machines)
+
+### Trade-offs
+
+* May lead to **earlier Out-Of-Memory (OOM)** situations if RAM is exhausted
+* Not ideal for low-RAM systems (<4GB)
+
+---
+
+## `vm.vfs_cache_pressure`
+
+### Description
+
+Controls how aggressively the kernel reclaims memory used for:
+
+* inode cache
+
+* dentry cache (directory entries)
+
+* Range: `0` to `1000`
+
+* Default: `100`
+
+### Behavior
+
+* **Higher values (e.g., 200+)**
+  → Kernel aggressively frees filesystem metadata caches
+  → More RAM available for applications
+  → Slower file access
+
+* **Lower values (e.g., 10–50)**
+  → Kernel retains filesystem cache longer
+  → Faster file system operations
+
+### Why `vm.vfs_cache_pressure = 50` in ArchPynux
+
+```conf
+vm.vfs_cache_pressure = 50
+```
+
+is chosen to:
+
+* Improve filesystem performance
+* Speed up:
+
+  * Python imports
+  * Compilation (C extensions, pip builds)
+  * File traversal (virtualenvs, git repos)
+
+This is especially beneficial because Python workloads:
+
+* Perform many small file accesses
+* Depend heavily on filesystem metadata
+
+### Trade-offs
+
+* Slightly higher RAM usage
+* Less aggressive cache reclamation under memory pressure
+
+---
+
+## Combined Effect
+
+Together:
+
+```conf
+vm.swappiness = 10
+vm.vfs_cache_pressure = 50
+```
+
+provide:
+
+* Low swap usage
+* High filesystem cache retention
+* Improved responsiveness for development workflows
+* Balanced memory utilization
+
+This combination is particularly effective for:
+
+* Python development
+* Package compilation (`pip`, `setuptools`, `meson`, etc.)
+* Large codebases
+
+---
+
+## Applying the Configuration
+
+To apply settings without reboot:
+
+```bash
+sysctl --system
+```
+
+Or:
+
+```bash
+sysctl -p /etc/sysctl.d/99-custom.conf
+```
+
+To verify:
+
+```bash
+sysctl vm.swappiness
+sysctl vm.vfs_cache_pressure
+```
+
+---
+
+## Additional Recommended Parameters
+
+Users may extend `99-custom.conf` depending on workload.
+
+### Memory & Performance
+
+```conf
+vm.dirty_ratio = 15
+vm.dirty_background_ratio = 5
+vm.overcommit_memory = 1
+```
+
+* `dirty_ratio`: Max percentage of dirty pages before writeback
+* `dirty_background_ratio`: Background flush threshold
+* `overcommit_memory=1`: Allows flexible memory allocation (useful for builds)
+
+---
+
+### Security Hardening
+
+```conf
+kernel.kptr_restrict = 2
+kernel.dmesg_restrict = 1
+kernel.randomize_va_space = 2
+kernel.unprivileged_bpf_disabled = 1
+```
+
+* Restricts kernel pointer exposure
+* Limits `dmesg` access
+* Enables full ASLR
+* Disables unprivileged BPF (reduces attack surface)
+
+---
+
+### Networking (Optional Hardening)
+
+```conf
+net.ipv4.tcp_syncookies = 1
+net.ipv4.conf.all.rp_filter = 1
+net.ipv4.icmp_echo_ignore_broadcasts = 1
+```
+
+---
+
+## Customization Guidelines
+
+Users should adjust values based on:
+
+| Scenario              | Recommended Changes              |
+| --------------------- | -------------------------------- |
+| Low RAM (<4GB)        | Increase `swappiness` (20–40)    |
+| High RAM (16GB+)      | Keep `swappiness` low (5–10)     |
+| Server workloads      | Increase cache pressure (75–100) |
+| Desktop/dev workloads | Lower cache pressure (30–50)     |
+
+---
+
+## Debugging and Monitoring
+
+Useful tools:
+
+```bash
+free -h
+vmstat 1
+htop
+```
+
+Check cache usage:
+
+```bash
+cat /proc/meminfo
+```
+
+---
+
+## Reference Documentation
+
+For further details, consult:
+
+* Linux kernel documentation
+* `man sysctl`
+* `man sysctl.d`
+* Arch Wiki: Sysctl
+
+Kernel documentation (local):
+
+```bash
+/usr/lib/modules/$(uname -r)/build/Documentation/admin-guide/sysctl/
+```
+
+Online:
+
+* [https://www.kernel.org/doc/html/latest/admin-guide/sysctl/](https://www.kernel.org/doc/html/latest/admin-guide/sysctl/)
+
+---
+
+## Notes
+
+* Improper tuning may degrade performance or stability
+* Always test changes incrementally
+* Use version-controlled configs for reproducibility
+
