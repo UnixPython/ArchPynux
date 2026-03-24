@@ -1,0 +1,360 @@
+# Basic System Hardening — `hardened.conf`
+
+## Overview
+
+`hardened.conf` provides a **baseline security profile** for ArchPynux systems. Unlike `99-hardened.conf`, which applies more aggressive and specialized hardening, this file defines:
+
+* Safe default kernel behavior
+* Essential network protections
+* Filesystem-level safeguards
+
+Location:
+
+```
+/etc/sysctl.d/hardened.conf
+```
+
+This configuration is suitable for:
+
+* General-purpose systems
+* Development environments
+* Users transitioning into hardened setups
+
+---
+
+## ⚠️ Syntax Corrections
+
+Your original configuration contains two errors:
+
+### 1. Missing `conf` in IPv4 default
+
+```conf
+net.ipv4.default.accept_redirects = 0
+```
+
+✔ Correct:
+
+```conf
+net.ipv4.conf.default.accept_redirects = 0
+```
+
+---
+
+### 2. Typo in protected regular files
+
+```conf
+fs.protected_regultar = 2
+```
+
+✔ Correct:
+
+```conf
+fs.protected_regular = 2
+```
+
+---
+
+## Full Configuration (Corrected)
+
+```conf
+# Disable ICMP redirects
+net.ipv4.conf.all.accept_redirects = 0
+net.ipv4.conf.default.accept_redirects = 0
+net.ipv6.conf.all.accept_redirects = 0
+net.ipv6.conf.default.accept_redirects = 0
+
+# Enable SYN flood protection
+net.ipv4.tcp_syncookies = 1
+
+# Disable IP forwarding (no routing)
+net.ipv4.ip_forward = 0
+
+# Enable full ASLR
+kernel.randomize_va_space = 2
+
+# Restrict core dumps from SUID binaries
+fs.suid_dumpable = 0
+
+# Hide kernel pointers
+kernel.kptr_restrict = 2
+
+# Filesystem protections
+fs.protected_fifos = 2
+fs.protected_regular = 2
+
+# Log suspicious packets
+net.ipv4.conf.all.log_martians = 1
+
+# Enable reverse path filtering
+net.ipv4.conf.all.rp_filter = 1
+```
+
+---
+
+## Network Security
+
+### Disable ICMP Redirects
+
+```conf
+net.ipv4.conf.*.accept_redirects = 0
+net.ipv6.conf.*.accept_redirects = 0
+```
+
+#### Description
+
+Prevents the kernel from accepting route modification messages from external sources.
+
+#### Security Impact
+
+* Protects against **route manipulation attacks**
+* Reduces exposure to MITM scenarios
+
+---
+
+### SYN Flood Protection
+
+```conf
+net.ipv4.tcp_syncookies = 1
+```
+
+#### Description
+
+Activates SYN cookies when the system detects excessive connection attempts.
+
+#### Security Impact
+
+* Mitigates **TCP SYN flood attacks**
+* Preserves availability under load
+
+---
+
+### Disable IP Forwarding
+
+```conf
+net.ipv4.ip_forward = 0
+```
+
+#### Description
+
+Disables packet forwarding between interfaces.
+
+#### Security Impact
+
+* Prevents system from acting as a router
+* Reduces attack surface in multi-interface setups
+
+#### Notes
+
+Set to `1` only if:
+
+* Running a router
+* Using advanced networking setups (NAT, containers, etc.)
+
+---
+
+### Log Martian Packets
+
+```conf
+net.ipv4.conf.all.log_martians = 1
+```
+
+#### Description
+
+Logs packets with impossible or invalid source addresses.
+
+#### Security Impact
+
+* Helps detect:
+
+  * Spoofed packets
+  * Misconfigured networks
+  * Potential scanning activity
+
+Logs are accessible via:
+
+```bash
+dmesg
+journalctl -k
+```
+
+---
+
+### Reverse Path Filtering
+
+```conf
+net.ipv4.conf.all.rp_filter = 1
+```
+
+#### Description
+
+Validates the source of incoming packets.
+
+#### Security Impact
+
+* Prevents IP spoofing
+* Drops packets with inconsistent routing paths
+
+---
+
+## Kernel Hardening
+
+### Address Space Layout Randomization (ASLR)
+
+```conf
+kernel.randomize_va_space = 2
+```
+
+#### Description
+
+Enables full memory randomization.
+
+#### Security Impact
+
+* Protects against:
+
+  * Buffer overflows
+  * Return-oriented programming (ROP)
+
+---
+
+### Kernel Pointer Restriction
+
+```conf
+kernel.kptr_restrict = 2
+```
+
+#### Description
+
+Hides kernel memory addresses from userspace.
+
+#### Security Impact
+
+* Prevents leakage of sensitive memory information
+* Hardens against exploit development
+
+---
+
+## Filesystem Protections
+
+### Restrict SUID Core Dumps
+
+```conf
+fs.suid_dumpable = 0
+```
+
+#### Description
+
+Prevents core dumps from SUID/SGID binaries.
+
+#### Security Impact
+
+* Avoids leakage of sensitive privileged data
+
+---
+
+### Protected FIFOs
+
+```conf
+fs.protected_fifos = 2
+```
+
+#### Description
+
+Prevents unauthorized access to named pipes in world-writable directories.
+
+#### Security Impact
+
+* Mitigates privilege escalation vectors
+
+---
+
+### Protected Regular Files
+
+```conf
+fs.protected_regular = 2
+```
+
+#### Description
+
+Restricts access to regular files in shared directories.
+
+#### Security Impact
+
+* Prevents file-based attacks in `/tmp`-like environments
+
+---
+
+## Combined Effect
+
+This configuration provides:
+
+* Safe baseline network behavior
+* Protection against spoofing and routing attacks
+* Kernel-level information hiding
+* Filesystem-level privilege protections
+* Enhanced logging for suspicious activity
+
+---
+
+## When to Use `hardened.conf`
+
+| Scenario                | Recommendation                   |
+| ----------------------- | -------------------------------- |
+| General desktop         | ✅ Recommended                    |
+| Development workstation | ✅ Recommended                    |
+| Hardened system         | Use with `99-hardened.conf`      |
+| Server                  | Adjust based on networking needs |
+
+---
+
+## Applying the Configuration
+
+```bash
+sysctl --system
+```
+
+Verify:
+
+```bash
+sysctl kernel.kptr_restrict
+sysctl net.ipv4.ip_forward
+```
+
+---
+
+## Additional Optional Settings
+
+Users may extend:
+
+```conf
+kernel.dmesg_restrict = 1
+kernel.unprivileged_bpf_disabled = 1
+net.core.bpf_jit_harden = 2
+```
+
+---
+
+## Reference Documentation
+
+* Linux kernel documentation
+* `man sysctl`
+* Arch Wiki: Security / Sysctl
+
+Kernel documentation:
+
+```
+/usr/lib/modules/$(uname -r)/build/Documentation/admin-guide/sysctl/
+```
+
+Online:
+
+* [https://www.kernel.org/doc/html/latest/admin-guide/sysctl/](https://www.kernel.org/doc/html/latest/admin-guide/sysctl/)
+
+---
+
+## Notes
+
+* This is a **baseline hardening profile**, not a maximum security configuration
+* Designed to be **safe and compatible by default**
+* Can be extended incrementally for stricter environments
+
