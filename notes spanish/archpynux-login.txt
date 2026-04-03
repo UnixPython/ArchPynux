@@ -1,0 +1,216 @@
+================================================================================
+        █████╗ ██████╗  ██████╗██╗  ██╗██████╗ ██╗   ██╗███╗  ██╗██╗   ██╗██╗  ██╗
+       ██╔══██╗██╔══██╗██╔════╝██║  ██║██╔══██╗╚██╗ ██╔╝████╗ ██║██║   ██║╚██╗██╔╝
+       ███████║██████╔╝██║     ███████║██████╔╝ ╚████╔╝ ██╔██╗██║██║   ██║ ╚███╔╝
+       ██╔══██║██╔══██╗██║     ██╔══██║██╔═══╝   ╚██╔╝  ██║╚████║██║   ██║ ██╔██╗
+       ██║  ██║██║  ██║╚██████╗██║  ██║██║        ██║   ██║ ╚███║╚██████╔╝██╔╝╚██╗
+       ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝╚═╝        ╚═╝   ╚═╝  ╚══╝ ╚═════╝ ╚═╝  ╚═╝
+================================================================================
+                    MANUAL DE ACCESO AL SISTEMA — VERSION DEMO
+                         Credenciales, idioma y programas incluidos
+================================================================================
+
+
+TABLA DE CONTENIDO
+==================
+  1. Idioma y teclado del sistema
+  2. Secuencia de arranque
+  3. Contraseña de GRUB
+  4. Login en el sistema
+  5. Programas incluidos
+  6. Primeros comandos
+
+
+================================================================================
+1. IDIOMA Y TECLADO DEL SISTEMA
+================================================================================
+
+  Idioma del sistema   : Español Latinoamérica (es_419 / es_PE)
+  Distribución teclado : Latinoamericano (latam)
+
+  El teclado latinoamericano incluye caracteres como ñ, á, é, í, ó, ú y ¿
+  en sus posiciones estándar para LATAM.
+
+  Si necesitas cambiar el teclado temporalmente en cualquier sesión:
+
+    $ loadkeys la-latin1
+
+  Para verificar el idioma activo del sistema:
+
+    $ echo $LANG
+    → es_PE.UTF-8
+
+
+================================================================================
+2. SECUENCIA DE ARRANQUE
+================================================================================
+
+  Al encender el equipo la secuencia es la siguiente:
+
+    [1] Firmware BIOS/UEFI
+         ↓
+    [2] GRUB — solicita contraseña de acceso
+         ↓
+    [3] Menú de GRUB (selección de entrada de arranque)
+         ↓
+    [4] Kernel linux-hardened cargando
+         ↓
+    [5] systemd iniciando servicios
+         ↓
+    [6] AppArmor cargando perfiles
+         ↓
+    [7] TTY — login del sistema
+
+
+================================================================================
+3. CONTRASEÑA DE GRUB
+================================================================================
+
+  ArchPynux protege el menú de GRUB con contraseña para impedir que
+  alguien modifique los parámetros del kernel sin autorización.
+
+  Al ver la pantalla de GRUB, presiona cualquier tecla para detener
+  el conteo. GRUB pedirá usuario y contraseña antes de arrancar.
+
+  USUARIO GRUB  : arch
+  CONTRASEÑA    : (configurada durante la instalación)
+
+  [!] IMPORTANTE — TECLADO EN GRUB
+  ----------------------------------
+  Durante el prompt de GRUB el teclado puede estar en distribución
+  US (inglés) dependiendo del firmware. Si la contraseña contiene
+  caracteres especiales, tenlo en cuenta al escribirla.
+
+  Una vez ingresadas las credenciales correctas, verás el menú de
+  arranque con las entradas disponibles. Selecciona ArchPynux y
+  presiona Enter.
+
+
+================================================================================
+4. LOGIN EN EL SISTEMA
+================================================================================
+
+  Después de que el kernel carga, systemd inicia los servicios y
+  aparece el prompt de login en TTY:
+
+  ┌─────────────────────────────────────────┐
+  │                                         │
+  │         [ASCII art / MOTD aquí]         │
+  │                                         │
+  │  archpynux login: _                     │
+  │                                         │
+  └─────────────────────────────────────────┘
+
+  CREDENCIALES DE USUARIO
+  ------------------------
+  Usuario     : arch
+  Contraseña  : 123
+
+  [!] No hay interfaz gráfica. El sistema opera completamente en TTY.
+  [!] La contraseña no se muestra mientras escribes. Es normal.
+
+  LOGIN EXITOSO — verás algo similar a:
+  ----------------------------------------
+    Last login: [fecha] on tty1
+
+    [banner figlet/lolcat de ArchPynux]
+
+    [arch@archpynux ~]$
+
+  Ese prompt indica que estás dentro del sistema como usuario "arch".
+
+
+================================================================================
+5. PROGRAMAS INCLUIDOS
+================================================================================
+
+  EDITOR DE TEXTO / DESARROLLO
+  ------------------------------
+  AstroNvim
+    Neovim con configuración completa lista para usar.
+    Framework que incluye: LSP, autocompletado, syntax highlighting,
+    navegador de archivos, terminal integrada, y más.
+
+    Cómo abrirlo:
+      $ nvim
+
+    Comandos básicos de AstroNvim:
+      Space          → Menú principal (leader key)
+      Space + e      → Abrir/cerrar árbol de archivos
+      Space + f + f  → Buscar archivo
+      Space + f + g  → Buscar texto en proyecto
+      Space + /      → Comentar línea
+      g + d          → Ir a definición (LSP)
+      K              → Ver documentación (LSP)
+      Space + l + f  → Formatear archivo
+      :w             → Guardar
+      :q             → Salir
+      :wq            → Guardar y salir
+
+    Para actualizar plugins de AstroNvim:
+      $ nvim
+      :AstroUpdate
+
+  HERRAMIENTAS DE SEGURIDAD INCLUIDAS
+  -------------------------------------
+  AppArmor       Control de acceso mandatorio
+  nftables       Firewall
+  auditd         Auditoría del kernel
+  AIDE           Detección de cambios en archivos
+  rkhunter       Detección de rootkits
+  chkrootkit     Segunda capa anti-rootkits
+  fail2ban       Protección contra fuerza bruta
+  Lynis          Auditoría de seguridad del sistema
+  OpenSCAP       Evaluación contra estándares
+
+  UTILIDADES DEL SISTEMA
+  -----------------------
+  fastfetch      Información del sistema con branding ArchPynux
+  figlet         Texto ASCII para el banner
+  lolcat         Colores en terminal
+  vim            Editor de texto alternativo
+  git            Control de versiones
+  pacman         Gestor de paquetes
+
+
+================================================================================
+6. PRIMEROS COMANDOS
+================================================================================
+
+  Al entrar al sistema por primera vez, comandos útiles:
+
+  Ver información del sistema:
+    $ fastfetch
+
+  Ver usuario actual:
+    $ whoami
+
+  Ver en qué TTY estás:
+    $ tty
+
+  Ver estado de AppArmor:
+    $ sudo aa-status
+
+  Ver estado del firewall:
+    $ sudo nft list ruleset
+
+  Actualizar el sistema:
+    $ sudo pacman -Syu
+
+  Abrir AstroNvim:
+    $ nvim
+
+  Ver logs del sistema:
+    $ journalctl -xe
+
+  Ejecutar auditoría de seguridad:
+    $ sudo lynis audit system
+
+  Cambiar tu contraseña:
+    $ passwd
+
+
+================================================================================
+                       FIN DEL MANUAL DE ACCESO
+           Bienvenido a ArchPynux. El sistema ya está protegido.
+================================================================================

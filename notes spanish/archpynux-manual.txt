@@ -1,0 +1,431 @@
+================================================================================
+         █████╗ ██████╗  ██████╗██╗  ██╗██████╗ ██╗   ██╗███╗  ██╗██╗   ██╗██╗  ██╗
+        ██╔══██╗██╔══██╗██╔════╝██║  ██║██╔══██╗╚██╗ ██╔╝████╗ ██║██║   ██║╚██╗██╔╝
+        ███████║██████╔╝██║     ███████║██████╔╝ ╚████╔╝ ██╔██╗██║██║   ██║ ╚███╔╝ 
+        ██╔══██║██╔══██╗██║     ██╔══██║██╔═══╝   ╚██╔╝  ██║╚████║██║   ██║ ██╔██╗ 
+        ██║  ██║██║  ██║╚██████╗██║  ██║██║        ██║   ██║ ╚███║╚██████╔╝██╔╝╚██╗
+        ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝╚═╝        ╚═╝   ╚═╝  ╚══╝ ╚═════╝ ╚═╝  ╚═╝
+================================================================================
+                    MANUAL DE BIENVENIDA — VERSION DEMO (ALPHA)
+                         Distribución Linux Segura por Defecto
+================================================================================
+
+
+TABLA DE CONTENIDO
+==================
+  1. Bienvenida
+  2. ¿Qué es ArchPynux?
+  3. Filosofía del proyecto
+  4. ¿Para quién es?
+  5. Lo que incluye esta versión demo
+  6. Stack de seguridad
+  7. Lo que NO incluye (y por qué)
+  8. Requisitos de hardware
+  9. Primeros pasos
+ 10. Comandos útiles
+ 11. Estructura del sistema
+ 12. Advertencias importantes
+ 13. Roadmap
+ 14. Créditos y licencia
+
+
+================================================================================
+1. BIENVENIDA
+================================================================================
+
+Bienvenido a ArchPynux.
+
+Acabas de iniciar una distribución Linux construida desde cero con una sola
+obsesión: seguridad real sin romper la usabilidad.
+
+Esta es la versión DEMO (alpha). Es funcional, auditable y lista para usarse
+como entorno de trabajo seguro o como base para aprender seguridad en Linux.
+
+Si llegaste hasta aquí, probablemente ya sabes que la mayoría de distribuciones
+"seguras" son Debian con firewall. ArchPynux no es eso.
+
+
+================================================================================
+2. ¿QUÉ ES ARCHPYNUX?
+================================================================================
+
+ArchPynux es una distribución Linux personalizada basada en Arch Linux,
+diseñada para ser segura por defecto sin requerir configuración manual post-
+instalación.
+
+  Base        : Arch Linux
+  Kernel      : linux-hardened
+  Versión     : Demo Alpha
+  Licencia    : GPL
+  Interfaz    : TTY (sin entorno gráfico por defecto)
+  Gestor pkgs : pacman + AUR
+
+A diferencia de distribuciones como Kali o Parrot (orientadas a ofensiva),
+ArchPynux está orientada a la DEFENSA y el HARDENING del sistema.
+
+
+================================================================================
+3. FILOSOFÍA DEL PROYECTO
+================================================================================
+
+  "Secure by default, not broken by default."
+
+Principios que guían cada decisión de diseño:
+
+  [+] Mínima superficie de ataque
+      Solo lo necesario está instalado. Sin servicios innecesarios,
+      sin daemons corriendo en segundo plano sin razón.
+
+  [+] Hardening sin fricción
+      Las configuraciones de seguridad están aplicadas desde el arranque.
+      El usuario no necesita saber qué es sysctl para estar protegido.
+
+  [+] Transparencia total
+      Todo está documentado. Cada parámetro, cada perfil, cada decisión
+      de diseño tiene su justificación escrita.
+
+  [+] Sin magia negra
+      No hay scripts ocultos haciendo cosas raras. El sistema es auditable
+      línea por línea.
+
+
+================================================================================
+4. ¿PARA QUIÉN ES?
+================================================================================
+
+  [+] Usuarios que quieren privacidad y seguridad sin configurar todo a mano
+  [+] Estudiantes de ciberseguridad que quieren un entorno defensivo real
+  [+] Sysadmins que necesitan una base hardened para sus servidores
+  [+] Pentesters que quieren separar su entorno ofensivo del defensivo
+  [+] Cualquiera que haya dicho "quiero Arch pero ya hardened"
+
+  [-] NO es para usuarios que necesitan GUI de escritorio lista para usar
+  [-] NO es un reemplazo de Kali para pentesting (eso es otra USB)
+
+
+================================================================================
+5. LO QUE INCLUYE ESTA VERSIÓN DEMO
+================================================================================
+
+  KERNEL
+  ------
+  [*] linux-hardened con parámetros de GRUB endurecidos:
+      - apparmor=1 security=apparmor
+      - init_on_alloc=1 init_on_free=1
+      - page_poison=1
+      - vsyscall=none
+      - debugfs=off
+      - lockdown=confidentiality
+
+  CONTROL DE ACCESO MANDATORIO
+  -----------------------------
+  [*] AppArmor activo y en modo enforce
+      - 162 perfiles en modo enforcing
+      - Cubre navegadores, systemd, dbus, redes, y más
+
+  HARDENING DE KERNEL (sysctl)
+  ----------------------------
+  [*] Parámetros distribuidos en /etc/sysctl.d/:
+      - Protección de red (SYN cookies, ICMP, IP spoofing)
+      - Restricción de ptrace
+      - ASLR máximo (kernel.randomize_va_space=2)
+      - Deshabilitación de magic SysRq
+      - Protección de /proc
+
+  FIREWALL
+  ---------
+  [*] nftables configurado con política DROP por defecto
+      - Solo tráfico explícitamente permitido pasa
+      - Reglas documentadas y auditables
+
+  DETECCIÓN DE INTRUSIÓN
+  ----------------------
+  [*] auditd        — registro de eventos del kernel
+  [*] AIDE          — detección de cambios en archivos críticos
+  [*] rkhunter      — detección de rootkits
+  [*] chkrootkit    — segunda capa de detección
+  [*] ClamAV        — antivirus (opcional, no daemon por defecto)
+
+  AUTENTICACIÓN
+  -------------
+  [*] fail2ban      — bloqueo por intentos fallidos
+  [*] PAM configurado con políticas estrictas
+
+  AUDITORÍA
+  ---------
+  [*] OpenSCAP      — evaluación contra estándares de seguridad
+  [*] Lynis         — score de seguridad del sistema (~79 en demo)
+
+  BLOQUEO DE COMPILADORES
+  -----------------------
+  [*] gcc, cc, g++, as, ld restringidos para usuarios no-root
+      Justificación: dificulta compilación de exploits en el sistema
+
+  IDENTIDAD VISUAL
+  ----------------
+  [*] fastfetch con config personalizada (muestra "Distro: ArchPynux")
+  [*] figlet + lolcat para banner de bienvenida
+  [*] MOTD personalizado con ASCII art
+  [*] PS1 blanco minimalista, estética TTY pura
+
+
+================================================================================
+6. STACK DE SEGURIDAD — RESUMEN
+================================================================================
+
+  CAPA              HERRAMIENTA         ESTADO
+  ──────────────────────────────────────────────
+  Kernel            linux-hardened      [ACTIVO]
+  MAC               AppArmor            [ENFORCE]
+  Firewall          nftables            [ACTIVO]
+  Sysctl            /etc/sysctl.d/      [ACTIVO]
+  Auditoría         auditd              [ACTIVO]
+  Integridad        AIDE                [ACTIVO]
+  Rootkits          rkhunter/chkrootkit [ACTIVO]
+  Autenticación     PAM + fail2ban      [ACTIVO]
+  Compiladores      wrapper scripts     [ACTIVO]
+  Evaluación        Lynis / OpenSCAP    [DISPONIBLE]
+  Score Lynis       ~79/100             [DEMO ALPHA]
+
+
+================================================================================
+7. LO QUE NO INCLUYE (Y POR QUÉ)
+================================================================================
+
+  LUKS (cifrado de disco completo)
+  ---------------------------------
+  Excluido deliberadamente en esta versión demo. LUKS en USB con hardware
+  antiguo puede causar problemas de rendimiento severos y bloqueos. Se
+  evaluará para versiones futuras con instalación en disco.
+
+  IMA / EVM (integridad extendida)
+  ---------------------------------
+  Requiere configuración de claves en hardware específico. Demasiado frágil
+  para una demo general. Documentado para configuración manual avanzada.
+
+  Secure Boot
+  -----------
+  Depende del firmware del equipo. No se puede garantizar en hardware
+  heterogéneo. El usuario puede habilitarlo manualmente si su equipo lo
+  soporta.
+
+  Entorno gráfico
+  ---------------
+  No es parte del diseño. ArchPynux es TTY-first. Puedes instalar uno,
+  pero no viene configurado. Esto es intencional: menos superficie, menos
+  vectores de ataque.
+
+
+================================================================================
+8. REQUISITOS DE HARDWARE
+================================================================================
+
+  MÍNIMO RECOMENDADO
+  -------------------
+  CPU     : x86_64, cualquier generación
+  RAM     : 512 MB (funcional) / 2 GB (recomendado)
+  Storage : USB 2.0 de 8 GB mínimo / 16 GB recomendado
+  Boot    : BIOS o UEFI (ambos soportados)
+
+  NOTA: ArchPynux corre perfectamente en hardware de hace 10+ años.
+  Fue desarrollado y probado en un Pentium Dual-Core E5700 con 6 GB RAM.
+  Si tu máquina puede correr Arch, puede correr ArchPynux.
+
+
+================================================================================
+9. PRIMEROS PASOS
+================================================================================
+
+  AL INICIAR EL SISTEMA
+  ----------------------
+  1. El sistema arranca directo a TTY (sin display manager)
+  2. Inicia sesión con tu usuario
+  3. El MOTD y banner se muestran automáticamente
+  4. Verifica el estado de AppArmor:
+
+       $ aa-status | grep "profiles in enforce mode"
+
+  5. Verifica el firewall:
+
+       $ nft list ruleset
+
+  6. Verifica el kernel:
+
+       $ uname -r
+       (debe mostrar algo como: 6.x.x-hardened)
+
+  PRIMER AUDIT DEL SISTEMA
+  -------------------------
+  Para ver el estado de seguridad general:
+
+       $ sudo lynis audit system
+
+  Para verificar integridad de archivos (primera vez):
+
+       $ sudo aide --init
+       $ sudo cp /var/lib/aide/aide.db.new /var/lib/aide/aide.db
+
+  Para buscar rootkits:
+
+       $ sudo rkhunter --check
+       $ sudo chkrootkit
+
+
+================================================================================
+10. COMANDOS ÚTILES
+================================================================================
+
+  APPARMOR
+  ---------
+  aa-status                         Ver estado de perfiles
+  aa-enforce /etc/apparmor.d/*      Poner todos en enforce
+  journalctl -xe | grep apparmor    Ver logs de AppArmor
+
+  FIREWALL (nftables)
+  -------------------
+  nft list ruleset                  Ver reglas activas
+  systemctl status nftables         Estado del servicio
+  nft flush ruleset                 Limpiar reglas (CUIDADO)
+
+  AUDITORÍA
+  ----------
+  ausearch -m avc                   Eventos de control de acceso
+  aureport --summary                Resumen de auditoría
+  journalctl -u auditd              Logs de auditd
+
+  SISTEMA
+  --------
+  fastfetch                         Info del sistema con branding
+  lynis audit system                Auditoría completa
+  aide --check                      Verificar integridad de archivos
+  rkhunter --check                  Escanear rootkits
+
+  PACMAN
+  -------
+  pacman -Syu                       Actualizar sistema
+  pacman -Ss <paquete>              Buscar paquete
+  pacman -Qs <paquete>              Buscar en instalados
+
+
+================================================================================
+11. ESTRUCTURA DEL SISTEMA
+================================================================================
+
+  ARCHIVOS DE CONFIGURACIÓN RELEVANTES
+  -------------------------------------
+  /etc/sysctl.d/              Parámetros de kernel por capa:
+    ├── 10-network.conf         Hardening de red
+    ├── 20-kernel.conf          Protecciones del kernel
+    └── 30-filesystem.conf      Restricciones de filesystem
+
+  /etc/apparmor.d/            Perfiles de AppArmor (162 enforced)
+  /etc/nftables.conf          Reglas del firewall
+  /etc/audit/audit.rules      Reglas de auditoría del kernel
+  /etc/security/              Configuración PAM
+  /etc/fail2ban/              Configuración de fail2ban
+  /etc/aide.conf              Configuración de AIDE
+
+  LOGS IMPORTANTES
+  ----------------
+  /var/log/audit/audit.log    Log de auditoría del kernel
+  /var/log/lynis-report.dat   Último reporte de Lynis
+  /var/log/rkhunter.log       Log de rkhunter
+  journalctl -xe              Log del sistema (systemd)
+
+
+================================================================================
+12. ADVERTENCIAS IMPORTANTES
+================================================================================
+
+  [!] ESTA ES UNA VERSIÓN ALPHA
+      No usar en producción crítica sin revisar y ajustar configuraciones
+      a tu caso de uso específico.
+
+  [!] APPARMOR EN ENFORCE PUEDE ROMPER COSAS
+      Si una aplicación no funciona, revisa los logs de AppArmor antes de
+      desactivar perfiles. Probablemente el perfil necesita ajuste, no
+      desactivarse.
+
+  [!] LOS COMPILADORES ESTÁN RESTRINGIDOS PARA USUARIOS NORMALES
+      Si necesitas compilar algo como usuario, usa sudo o ajusta los
+      wrappers en /usr/local/bin/. Esto es intencional.
+
+  [!] AIDE NECESITA INICIALIZARSE DESPUÉS DE CAMBIOS GRANDES
+      Después de instalar paquetes nuevos, actualiza la base de datos:
+        $ sudo aide --update
+        $ sudo mv /var/lib/aide/aide.db.new /var/lib/aide/aide.db
+
+  [!] fail2ban PUEDE BLOQUEARTE A TI MISMO
+      Si fallas muchos logins en SSH o localmente, fail2ban actúa.
+      Para desbloquearte: sudo fail2ban-client unban --all
+
+
+================================================================================
+13. ROADMAP
+================================================================================
+
+  VERSIÓN DEMO (ACTUAL)
+  [x] linux-hardened kernel
+  [x] AppArmor con 162 perfiles enforced
+  [x] Hardening sysctl multicapa
+  [x] nftables con política DROP
+  [x] auditd, AIDE, rkhunter, chkrootkit
+  [x] fail2ban + PAM
+  [x] OpenSCAP + Lynis
+  [x] Bloqueo de compiladores
+  [x] Identidad visual completa
+  [x] Documentación en GitHub
+
+  VERSIONES FUTURAS (PLANEADO)
+  [ ] Script de instalación automatizado
+  [ ] Soporte LUKS opcional en instalación
+  [ ] Perfiles AppArmor adicionales
+  [ ] Herramientas Python integradas (PyPass toolkit)
+  [ ] Soporte IMA/EVM para hardware compatible
+  [ ] ISO descargable
+  [ ] Soporte profesional (modelo Red Hat)
+
+
+================================================================================
+14. CRÉDITOS Y LICENCIA
+================================================================================
+
+  PROYECTO
+  ---------
+  ArchPynux es un proyecto independiente de código abierto.
+  Desarrollado desde cero con la filosofía de que la seguridad
+  no debería requerir un doctorado para activarse.
+
+  HERRAMIENTAS UTILIZADAS
+  ------------------------
+  Este proyecto integra software libre y de código abierto:
+  AppArmor, nftables, auditd, AIDE, rkhunter, chkrootkit,
+  ClamAV, fail2ban, OpenSCAP, Lynis, linux-hardened.
+
+  Todos los créditos a sus respectivos autores y comunidades.
+
+  LICENCIA
+  ---------
+  ArchPynux se distribuye bajo la GNU General Public License v3.0
+
+  Eres libre de:
+  [+] Usar el sistema para cualquier propósito
+  [+] Estudiar cómo funciona y modificarlo
+  [+] Distribuir copias
+  [+] Distribuir versiones modificadas
+
+  Bajo las condiciones de:
+  [!] Mantener la misma licencia GPL en derivados
+  [!] Documentar los cambios realizados
+  [!] Incluir el código fuente o un enlace a él
+
+  Soporte profesional (configuración, hardening personalizado,
+  auditorías) disponible como servicio de pago.
+
+  Para más información: github.com/[usuario]/archpynux
+
+
+================================================================================
+                          FIN DEL MANUAL — VERSION DEMO
+           "El sistema más seguro es el que entiendes completamente."
+================================================================================

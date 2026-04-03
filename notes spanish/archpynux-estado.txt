@@ -1,0 +1,123 @@
+================================================================================
+        █████╗ ██████╗  ██████╗██╗  ██╗██████╗ ██╗   ██╗███╗  ██╗██╗   ██╗██╗  ██╗
+       ██╔══██╗██╔══██╗██╔════╝██║  ██║██╔══██╗╚██╗ ██╔╝████╗ ██║██║   ██║╚██╗██╔╝
+       ███████║██████╔╝██║     ███████║██████╔╝ ╚████╔╝ ██╔██╗██║██║   ██║ ╚███╔╝
+       ██╔══██║██╔══██╗██║     ██╔══██║██╔═══╝   ╚██╔╝  ██║╚████║██║   ██║ ██╔██╗
+       ██║  ██║██║  ██║╚██████╗██║  ██║██║        ██║   ██║ ╚███║╚██████╔╝██╔╝╚██╗
+       ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝╚═╝        ╚═╝   ╚═╝  ╚══╝ ╚═════╝ ╚═╝  ╚═╝
+================================================================================
+                         AVISO DE ESTADO DEL PROYECTO
+================================================================================
+
+
+  ESTADO ACTUAL : EN DESARROLLO ACTIVO
+  VERSIÓN       : Demo Alpha
+  FECHA         : 2026
+
+
+================================================================================
+  ¿CUÁNDO ESTARÁ COMPLETA?
+================================================================================
+
+  ArchPynux no tiene una fecha de lanzamiento fija.
+  Es un proyecto independiente desarrollado por una sola persona,
+  construido con cuidado y sin atajos.
+
+  Estimado aproximado de lanzamiento estable: finales de 2026.
+
+  Esto puede cambiar. La calidad va antes que la velocidad.
+
+
+================================================================================
+  ¿EN QUÉ SE ESTÁ TRABAJANDO AHORA?
+================================================================================
+
+  Estas son las tareas activas en este momento:
+
+  [~] Documentación completa del sistema
+       Manuales de usuario, referencias técnicas, justificación
+       de cada decisión de diseño y hardening.
+
+  [~] Construcción del archiso
+       Creación de la imagen ISO instalable de ArchPynux.
+       Esto permitirá instalar la distro en cualquier equipo
+       sin necesidad de configurar todo manualmente.
+
+  [~] Personalización del sistema
+       Ajustes finales de identidad visual, MOTD, configuración
+       por defecto de herramientas, y experiencia de usuario
+       desde el primer arranque.
+
+  [ ] Pruebas en hardware variado
+       Verificación de compatibilidad y estabilidad antes
+       del lanzamiento público.
+
+  [ ] Publicación oficial en GitHub con ISO descargable
+
+
+  LEYENDA:  [~] En progreso     [ ] Pendiente     [x] Completado
+
+
+================================================================================
+  LO QUE YA ESTÁ LISTO
+================================================================================
+
+  [x] Stack de seguridad completo (kernel, AppArmor, nftables, sysctl)
+  [x] 162 perfiles AppArmor en modo enforcing
+  [x] auditd, AIDE, rkhunter, chkrootkit, fail2ban, PAM
+  [x] Lynis score ~79 en demo alpha
+  [x] Identidad visual (fastfetch, figlet, MOTD, PS1)
+  [x] AstroNvim configurado
+  [x] Repositorio alpha en GitHub (con seguidores activos)
+  [x] Manuales de bienvenida, instalación UEFI y acceso al sistema
+
+
+================================================================================
+  IDIOMA Y PÚBLICO OBJETIVO
+================================================================================
+
+  ArchPynux viene configurado por defecto en español latinoamericano
+  con teclado latinoamericano.
+
+  Esta distribución está orientada a toda la comunidad hispanohablante,
+  incluyendo usuarios de España y Latinoamérica.
+
+  Si eres usuario de España o prefieres otra distribución de teclado
+  o idioma (es_ES, en_US, etc.), puedes cambiarlo siguiendo la
+  documentación oficial de Arch Linux:
+
+    Cambiar idioma del sistema (locale):
+    → https://wiki.archlinux.org/title/Locale
+
+    Cambiar distribución de teclado:
+    → https://wiki.archlinux.org/title/Linux_console/Keyboard_configuration
+
+    Cambiar zona horaria:
+    → https://wiki.archlinux.org/title/System_time
+
+  La Wiki de Arch Linux es la referencia definitiva para cualquier
+  configuración del sistema. Está disponible en inglés y es mantenida
+  activamente por la comunidad.
+
+  [!] Cambiar idioma o teclado no afecta el stack de seguridad
+      ni el funcionamiento de ArchPynux en absoluto.
+
+
+================================================================================
+  NOTA FINAL
+================================================================================
+
+  ArchPynux es un proyecto real, construido desde cero.
+  No es una distribución modificada de otra cosa.
+  Cada decisión tiene documentación y justificación.
+
+  Si llegaste aquí antes del lanzamiento oficial:
+  bienvenido a la etapa más interesante del proyecto.
+
+  Puedes seguir el progreso en GitHub.
+  Las contribuciones y el feedback son bienvenidos.
+
+
+================================================================================
+         "Lo que se construye bien, no se construye rápido."
+================================================================================

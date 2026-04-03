@@ -1,0 +1,578 @@
+================================================================================
+        █████╗ ██████╗  ██████╗██╗  ██╗██████╗ ██╗   ██╗███╗  ██╗██╗   ██╗██╗  ██╗
+       ██╔══██╗██╔══██╗██╔════╝██║  ██║██╔══██╗╚██╗ ██╔╝████╗ ██║██║   ██║╚██╗██╔╝
+       ███████║██████╔╝██║     ███████║██████╔╝ ╚████╔╝ ██╔██╗██║██║   ██║ ╚███╔╝
+       ██╔══██║██╔══██╗██║     ██╔══██║██╔═══╝   ╚██╔╝  ██║╚████║██║   ██║ ██╔██╗
+       ██║  ██║██║  ██║╚██████╗██║  ██║██║        ██║   ██║ ╚███║╚██████╔╝██╔╝╚██╗
+       ╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝╚═╝        ╚═╝   ╚═╝  ╚══╝ ╚═════╝ ╚═╝  ╚═╝
+================================================================================
+              GUÍA DE INSTALACIÓN EN SISTEMAS UEFI — VERSION DEMO
+                     Instalación limpia con soporte UEFI nativo
+================================================================================
+
+
+TABLA DE CONTENIDO
+==================
+  1. Propósito de este documento
+  2. ¿Qué es UEFI y por qué importa?
+  3. Diferencias clave: BIOS Legacy vs UEFI
+  4. Requisitos previos
+  5. Esquema de particionado GPT
+  6. Paso a paso: Particionado
+  7. Paso a paso: Instalación base de Arch
+  8. Paso a paso: GRUB en modo UEFI
+  9. Parámetros de hardening en GRUB
+ 10. Verificación del arranque
+ 11. Aplicar el stack de seguridad de ArchPynux
+ 12. Diferencias con la versión BIOS Legacy
+ 13. Problemas comunes
+
+
+================================================================================
+1. PROPÓSITO DE ESTE DOCUMENTO
+================================================================================
+
+Este manual documenta cómo instalar ArchPynux desde cero en un equipo con
+firmware UEFI.
+
+La USB demo de ArchPynux fue construida sobre BIOS legacy (MBR). No se
+modificará para mantener compatibilidad con hardware antiguo. Este documento
+existe para que usuarios con hardware UEFI puedan replicar el mismo entorno
+hardened en sus equipos.
+
+  [!] Este manual NO modifica la USB demo existente.
+  [!] Este es un proceso de instalación limpia en un disco o USB separado.
+  [!] Al final tendrás el mismo sistema que la demo, con soporte UEFI nativo.
+
+
+================================================================================
+2. ¿QUÉ ES UEFI Y POR QUÉ IMPORTA?
+================================================================================
+
+UEFI (Unified Extensible Firmware Interface) es el reemplazo moderno del BIOS.
+La mayoría de equipos fabricados después de 2012 lo usan.
+
+Diferencias que te afectan directamente:
+
+  BIOS Legacy
+  -----------
+  - Usa tabla de particiones MBR
+  - GRUB se instala en el MBR (primeros 512 bytes del disco)
+  - Límite de 4 particiones primarias
+  - No tiene partición EFI
+
+  UEFI
+  ----
+  - Usa tabla de particiones GPT
+  - GRUB se instala en una partición ESP (EFI System Partition)
+  - Sin límite práctico de particiones
+  - La partición ESP debe ser FAT32, mínimo 300 MB
+  - El firmware busca el bootloader en /EFI/ dentro de la ESP
+
+¿Por qué importa para ArchPynux?
+  Si intentas instalar la demo (BIOS/MBR) en un equipo UEFI puro,
+  simplemente no arrancará. Necesitas GRUB instalado en modo UEFI,
+  apuntando a una partición ESP válida.
+
+
+================================================================================
+3. DIFERENCIAS CLAVE: BIOS LEGACY vs UEFI
+================================================================================
+
+  ASPECTO              BIOS LEGACY              UEFI
+  ─────────────────────────────────────────────────────────────────────
+  Tabla particiones    MBR                      GPT
+  Partición boot       No requerida             ESP (FAT32, tipo EF00)
+  Instalación GRUB     grub-install /dev/sdX    grub-install --target=x86_64-efi
+  Paquete GRUB         grub                     grub + efibootmgr
+  Variables boot       No existen               efivarfs (montado en /sys/firmware/efi)
+  Secure Boot          No soportado             Soportado (no habilitado en demo)
+  Velocidad boot       Lento                    Más rápido
+
+
+================================================================================
+4. REQUISITOS PREVIOS
+================================================================================
+
+  HARDWARE
+  ---------
+  [*] Equipo con firmware UEFI (verificar en BIOS: busca "UEFI" o "Boot Mode")
+  [*] USB o disco de destino de mínimo 8 GB (recomendado 16 GB)
+  [*] USB de instalación con Arch Linux ISO (archlinux-*.iso)
+  [*] Conexión a internet durante la instalación
+
+  VERIFICAR QUE TU EQUIPO ARRANCÓ EN MODO UEFI
+  ---------------------------------------------
+  Desde el instalador de Arch, ejecuta:
+
+    $ ls /sys/firmware/efi/efivars
+
+  Si el directorio existe y tiene contenido: estás en modo UEFI. Continúa.
+  Si el directorio no existe: tu equipo arrancó en modo BIOS legacy.
+    → Entra al firmware y busca la opción "Boot Mode: UEFI" o similar.
+    → Desactiva "Legacy Boot" o "CSM" si está disponible.
+
+  PAQUETES NECESARIOS (se instalan durante el proceso)
+  -----------------------------------------------------
+  - base, base-devel, linux-hardened, linux-hardened-headers
+  - linux-firmware
+  - grub, efibootmgr
+  - networkmanager (o iwd para wifi)
+
+
+================================================================================
+5. ESQUEMA DE PARTICIONADO GPT
+================================================================================
+
+  Para una USB de 16 GB, esquema recomendado:
+
+  PARTICIÓN    TAMAÑO      TIPO              PUNTO DE MONTAJE
+  ─────────────────────────────────────────────────────────────
+  /dev/sdX1    512 MB      EFI System (ESP)  /boot/efi
+  /dev/sdX2    512 MB      Linux filesystem  /boot
+  /dev/sdX3    resto       Linux filesystem  /
+
+  NOTAS:
+  [*] La ESP (sdX1) DEBE ser FAT32. No ext4, no btrfs. FAT32.
+  [*] /boot separado es opcional pero recomendado para claridad.
+  [*] Si el disco es grande (SSD interno), considera swap también.
+  [*] sdX es el dispositivo de tu disco. Verifica con: lsblk
+
+  Esquema mínimo (USB pequeña, 8 GB):
+
+  PARTICIÓN    TAMAÑO      TIPO              PUNTO DE MONTAJE
+  ─────────────────────────────────────────────────────────────
+  /dev/sdX1    512 MB      EFI System (ESP)  /boot/efi
+  /dev/sdX2    resto       Linux filesystem  /
+
+
+================================================================================
+6. PASO A PASO: PARTICIONADO
+================================================================================
+
+  [!] ADVERTENCIA: Esto borrará TODOS los datos del disco de destino.
+  [!] Asegúrate de que sdX es el disco correcto. Verifica con: lsblk
+
+  PASO 1 — Identificar el disco de destino
+  -----------------------------------------
+    $ lsblk
+
+  Ejemplo de salida:
+    sda    8:0    0  500G  0  disk    ← disco interno (NO tocar)
+    sdb    8:16   1   16G  0  disk    ← USB de destino
+    └─sdb1 8:17   1    1G  0  part
+
+  En este ejemplo, el disco de destino es /dev/sdb.
+
+  PASO 2 — Abrir gdisk para crear tabla GPT
+  ------------------------------------------
+    $ gdisk /dev/sdX
+
+  Dentro de gdisk:
+    o         → Crear nueva tabla GPT (borra todo)
+    Confirm: y
+
+  PASO 3 — Crear partición ESP
+  -----------------------------
+  Dentro de gdisk:
+    n         → Nueva partición
+    1         → Número de partición
+    [Enter]   → Primer sector (default)
+    +512M     → Tamaño
+    ef00      → Tipo: EFI System
+
+  PASO 4 — Crear partición /boot (opcional)
+  ------------------------------------------
+    n         → Nueva partición
+    2         → Número de partición
+    [Enter]   → Primer sector (default)
+    +512M     → Tamaño
+    8300      → Tipo: Linux filesystem
+
+  PASO 5 — Crear partición raíz
+  ------------------------------
+    n         → Nueva partición
+    3         → Número de partición
+    [Enter]   → Primer sector (default)
+    [Enter]   → Último sector (usa el resto del disco)
+    8300      → Tipo: Linux filesystem
+
+  PASO 6 — Escribir cambios
+  --------------------------
+    w         → Escribir tabla al disco
+    Confirm: y
+
+  PASO 7 — Formatear particiones
+  --------------------------------
+    $ mkfs.fat -F32 /dev/sdX1        ← ESP en FAT32 (obligatorio)
+    $ mkfs.ext4 /dev/sdX2            ← /boot en ext4 (si la creaste)
+    $ mkfs.ext4 /dev/sdX3            ← / en ext4
+
+  Si usas esquema mínimo (sin /boot separado):
+    $ mkfs.fat -F32 /dev/sdX1
+    $ mkfs.ext4 /dev/sdX2
+
+
+================================================================================
+7. PASO A PASO: INSTALACIÓN BASE DE ARCH
+================================================================================
+
+  PASO 1 — Montar particiones
+  ----------------------------
+    $ mount /dev/sdX3 /mnt                   ← raíz primero
+    $ mkdir -p /mnt/boot/efi
+    $ mount /dev/sdX2 /mnt/boot              ← si tienes /boot separado
+    $ mount /dev/sdX1 /mnt/boot/efi          ← ESP siempre en /boot/efi
+
+  Si usas esquema mínimo:
+    $ mount /dev/sdX2 /mnt
+    $ mkdir -p /mnt/boot/efi
+    $ mount /dev/sdX1 /mnt/boot/efi
+
+  PASO 2 — Instalar sistema base con kernel hardened
+  ---------------------------------------------------
+    $ pacstrap /mnt base base-devel linux-hardened linux-hardened-headers \
+      linux-firmware grub efibootmgr networkmanager vim
+
+  [!] Nota importante: Se instala linux-hardened, NO linux.
+      Este es el kernel con patches de seguridad de ArchPynux.
+
+  PASO 3 — Generar fstab
+  -----------------------
+    $ genfstab -U /mnt >> /mnt/etc/fstab
+    $ cat /mnt/etc/fstab    ← verificar que se generó bien
+
+  PASO 4 — Entrar al sistema
+  ---------------------------
+    $ arch-chroot /mnt
+
+  PASO 5 — Configuración básica
+  ------------------------------
+    # ln -sf /usr/share/zoneinfo/America/Lima /etc/localtime
+    # hwclock --systohc
+
+    Editar /etc/locale.gen, descomentar:
+      en_US.UTF-8 UTF-8
+      es_PE.UTF-8 UTF-8
+
+    # locale-gen
+    # echo "LANG=es_PE.UTF-8" > /etc/locale.conf
+    # echo "archpynux" > /etc/hostname
+
+  PASO 6 — Contraseña root y usuario
+  ------------------------------------
+    # passwd
+    # useradd -m -G wheel -s /bin/bash tuusuario
+    # passwd tuusuario
+
+    Habilitar sudo para wheel:
+    # EDITOR=vim visudo
+      Descomentar: %wheel ALL=(ALL:ALL) ALL
+
+  PASO 7 — Habilitar servicios básicos
+  -------------------------------------
+    # systemctl enable NetworkManager
+
+
+================================================================================
+8. PASO A PASO: GRUB EN MODO UEFI
+================================================================================
+
+  Este es el paso crítico. Diferente al BIOS, GRUB en UEFI necesita
+  efibootmgr y debe instalarse en la partición ESP.
+
+  PASO 1 — Verificar que efivarfs está montado
+  ---------------------------------------------
+    # ls /sys/firmware/efi/efivars
+
+  Si está vacío o el directorio no existe:
+    # mount -t efivarfs efivarfs /sys/firmware/efi/efivars
+
+  PASO 2 — Instalar GRUB en modo UEFI
+  ------------------------------------
+    # grub-install --target=x86_64-efi \
+                   --efi-directory=/boot/efi \
+                   --bootloader-id=ArchPynux \
+                   --recheck
+
+  Explicación de los flags:
+    --target=x86_64-efi       → Modo UEFI de 64 bits (el más común)
+    --efi-directory=/boot/efi → Dónde está montada la ESP
+    --bootloader-id=ArchPynux → Nombre que aparece en el menú UEFI del firmware
+    --recheck                 → Fuerza regeneración de device map
+
+  Salida esperada:
+    Installation finished. No error reported.
+
+  Si ves errores relacionados con efivarfs:
+    El equipo puede tener UEFI con escritura deshabilitada.
+    Solución: añadir --removable al comando anterior.
+
+    # grub-install --target=x86_64-efi \
+                   --efi-directory=/boot/efi \
+                   --bootloader-id=ArchPynux \
+                   --removable
+
+  El flag --removable instala el bootloader como fallback en
+  /boot/efi/EFI/BOOT/BOOTX64.EFI, que funciona en cualquier UEFI
+  sin importar si permite escribir variables EFI.
+  Recomendado para instalaciones en USB.
+
+  PASO 3 — Verificar que se instaló correctamente
+  -------------------------------------------------
+    # ls /boot/efi/EFI/
+    ArchPynux/   (debe aparecer este directorio)
+
+    # ls /boot/efi/EFI/ArchPynux/
+    grubx64.efi   (el bootloader UEFI)
+
+
+================================================================================
+9. PARÁMETROS DE HARDENING EN GRUB
+================================================================================
+
+  Este es el corazón del hardening de ArchPynux a nivel de arranque.
+  Los mismos parámetros de la versión BIOS aplican aquí.
+
+  Editar el archivo de configuración de GRUB:
+    # vim /etc/default/grub
+
+  Modificar la línea GRUB_CMDLINE_LINUX_DEFAULT:
+
+  GRUB_CMDLINE_LINUX_DEFAULT="quiet apparmor=1 security=apparmor \
+  init_on_alloc=1 init_on_free=1 \
+  page_poison=1 \
+  vsyscall=none \
+  debugfs=off \
+  lockdown=confidentiality \
+  slab_nomerge \
+  pti=on \
+  spectre_v2=on \
+  spec_store_bypass_disable=on \
+  mds=full,nosmt"
+
+  EXPLICACIÓN DE CADA PARÁMETRO
+  ------------------------------
+
+  apparmor=1 security=apparmor
+    Habilita AppArmor como módulo de seguridad del kernel.
+    Sin esto, AppArmor está instalado pero inactivo.
+
+  init_on_alloc=1 init_on_free=1
+    Inicializa la memoria en cero al asignarla y al liberarla.
+    Previene ataques de lectura de memoria no inicializada.
+
+  page_poison=1
+    Llena páginas liberadas con un patrón conocido.
+    Hace más difícil explotar use-after-free.
+
+  vsyscall=none
+    Deshabilita vsyscall legacy (reemplazado por vDSO).
+    Elimina una región de memoria ejecutable fija, usada en exploits.
+
+  debugfs=off
+    Desmonta debugfs, que expone información interna del kernel.
+    No necesaria en producción.
+
+  lockdown=confidentiality
+    Modo de bloqueo del kernel: impide que root modifique el kernel
+    en ejecución (no kexec, no /dev/mem, no módulos sin firma).
+
+  slab_nomerge
+    Previene la fusión de cachés del allocator de kernel.
+    Mitiga ciertos ataques de heap.
+
+  pti=on
+    Page Table Isolation: mitiga Meltdown.
+    Obligatorio en CPUs Intel afectadas.
+
+  spectre_v2=on
+    Mitigación completa de Spectre variante 2.
+
+  spec_store_bypass_disable=on
+    Mitiga Spectre variante 4 (Speculative Store Bypass).
+
+  mds=full,nosmt
+    Mitiga MDS (Microarchitectural Data Sampling).
+    nosmt deshabilita Hyper-Threading si está presente.
+    [!] Puede reducir rendimiento en CPUs con HT. Evalúa si necesitas
+        rendimiento, en ese caso usa mds=full sin nosmt.
+
+  DESPUÉS DE EDITAR, GENERAR LA CONFIGURACIÓN:
+  ---------------------------------------------
+    # grub-mkconfig -o /boot/grub/grub.cfg
+
+  Verificar que los parámetros aparecen en el grub.cfg generado:
+    # grep "apparmor" /boot/grub/grub.cfg
+
+
+================================================================================
+10. VERIFICACIÓN DEL ARRANQUE
+================================================================================
+
+  PASO 1 — Salir del chroot y reiniciar
+  ---------------------------------------
+    # exit
+    $ umount -R /mnt
+    $ reboot
+
+  Retirar la USB de instalación antes de que reinicie.
+
+  PASO 2 — Verificar modo UEFI al arrancar
+  -----------------------------------------
+  En el menú de boot del firmware, debe aparecer "ArchPynux" como
+  opción de arranque UEFI (no legacy).
+
+  PASO 3 — Verificar dentro del sistema
+  ---------------------------------------
+  Una vez logueado, verificar:
+
+    Kernel hardened:
+    $ uname -r
+    → debe mostrar: 6.x.x-hardened
+
+    Modo UEFI confirmado:
+    $ ls /sys/firmware/efi/efivars
+    → debe listar variables EFI (no vacío)
+
+    AppArmor activo:
+    $ aa-status | grep "profiles in enforce mode"
+    → debe mostrar número de perfiles
+
+    Entrada UEFI registrada:
+    $ efibootmgr
+    → debe aparecer "ArchPynux" en la lista
+
+
+================================================================================
+11. APLICAR EL STACK DE SEGURIDAD DE ARCHPYNUX
+================================================================================
+
+  Una vez que el sistema base arranca correctamente en UEFI, aplicar
+  el mismo hardening de la versión demo. El proceso es idéntico al de
+  la instalación BIOS.
+
+  ORDEN RECOMENDADO DE APLICACIÓN
+  --------------------------------
+
+  1. AppArmor
+     $ sudo pacman -S apparmor
+     $ sudo systemctl enable --now apparmor
+     → Copiar perfiles del repo ArchPynux a /etc/apparmor.d/
+     → sudo aa-enforce /etc/apparmor.d/*
+
+  2. Sysctl hardening
+     → Copiar archivos del repo a /etc/sysctl.d/
+     → sudo sysctl --system
+
+  3. nftables
+     → Copiar /etc/nftables.conf del repo
+     → sudo systemctl enable --now nftables
+
+  4. auditd
+     $ sudo pacman -S audit
+     $ sudo systemctl enable --now auditd
+
+  5. AIDE
+     $ sudo pacman -S aide
+     → Copiar aide.conf del repo
+     → sudo aide --init
+     → sudo cp /var/lib/aide/aide.db.new /var/lib/aide/aide.db
+
+  6. rkhunter y chkrootkit
+     $ sudo pacman -S rkhunter chkrootkit
+
+  7. fail2ban
+     $ sudo pacman -S fail2ban
+     $ sudo systemctl enable --now fail2ban
+
+  8. PAM
+     → Aplicar configuración del repo con precaución
+     → Probar login en otra terminal antes de cerrar la actual
+
+  9. Bloqueo de compiladores
+     → Aplicar wrappers del repo a /usr/local/bin/
+
+  10. Identidad visual
+      $ sudo pacman -S fastfetch figlet lolcat
+      → Copiar configs del repo
+
+  Para cada paso, referirse al repositorio de ArchPynux en GitHub
+  donde cada configuración está documentada con su justificación.
+
+
+================================================================================
+12. DIFERENCIAS CON LA VERSIÓN BIOS LEGACY
+================================================================================
+
+  ASPECTO                   BIOS LEGACY (demo)       UEFI (esta guía)
+  ──────────────────────────────────────────────────────────────────────
+  Tabla particiones          MBR                      GPT
+  Partición extra            No                       ESP /boot/efi
+  Comando grub-install       grub-install /dev/sdX    grub-install --target=x86_64-efi
+  Paquetes extra             grub                     grub + efibootmgr
+  Ubicación bootloader       MBR del disco            /boot/efi/EFI/ArchPynux/
+  Soporte Secure Boot        No                       Sí (no habilitado por defecto)
+  Parámetros del kernel      Idénticos                Idénticos
+  Stack de seguridad         Idéntico                 Idéntico
+  Hardening aplicado         Idéntico                 Idéntico
+
+  Conclusión: la única diferencia real es el método de arranque.
+  El sistema operativo, el hardening y la experiencia son exactamente iguales.
+
+
+================================================================================
+13. PROBLEMAS COMUNES
+================================================================================
+
+  ERROR: "EFI variables are not supported on this system"
+  --------------------------------------------------------
+  Causa: El sistema arrancó en modo BIOS legacy, no UEFI.
+  Solución: Reiniciar, entrar al firmware, cambiar Boot Mode a UEFI,
+            deshabilitar CSM/Legacy Boot, reintentar instalación.
+
+  ERROR: grub-install falla con error de escritura en efivarfs
+  -------------------------------------------------------------
+  Causa: Algunos firmwares UEFI (especialmente en USB) no permiten
+         escribir variables EFI persistentes.
+  Solución: Usar el flag --removable:
+    # grub-install --target=x86_64-efi \
+                   --efi-directory=/boot/efi \
+                   --bootloader-id=ArchPynux \
+                   --removable
+
+  El sistema no aparece en el menú de boot UEFI
+  -----------------------------------------------
+  Causa 1: El firmware no detecta la entrada automáticamente.
+  Solución: Entrar al firmware y añadir manualmente la ruta:
+            EFI\ArchPynux\grubx64.efi
+
+  Causa 2: Se usó --removable. El firmware busca en EFI\BOOT\BOOTX64.EFI
+  Verificar: ls /boot/efi/EFI/BOOT/BOOTX64.EFI
+
+  AppArmor no activo después de reiniciar
+  ----------------------------------------
+  Causa: Los parámetros de GRUB no se generaron correctamente.
+  Verificar: cat /proc/cmdline
+             (debe aparecer apparmor=1 security=apparmor)
+  Solución: Reeditar /etc/default/grub y ejecutar:
+            # grub-mkconfig -o /boot/grub/grub.cfg
+
+  El sistema arranca lento con mds=full,nosmt
+  -------------------------------------------
+  Causa: nosmt deshabilita Hyper-Threading, reduciendo rendimiento.
+  Solución: En /etc/default/grub cambiar mds=full,nosmt por mds=full
+            y regenerar grub.cfg.
+            Nota: esto reduce la mitigación de MDS pero mantiene HT.
+
+  Error al montar ESP: "wrong fs type"
+  --------------------------------------
+  Causa: La partición ESP no se formateó como FAT32.
+  Solución: Reformatear como FAT32 (borra el contenido):
+            # mkfs.fat -F32 /dev/sdX1
+
+
+================================================================================
+                   FIN DEL DOCUMENTO — GUÍA DE INSTALACIÓN UEFI
+       "La compatibilidad no es un compromiso. Es arquitectura."
+================================================================================
