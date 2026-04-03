@@ -73,7 +73,7 @@ TABLA DE CONTENIDO
   el conteo. GRUB pedirá usuario y contraseña antes de arrancar.
 
   USUARIO GRUB  : arch
-  CONTRASEÑA    : (configurada durante la instalación)
+  CONTRASEÑA    :  s0,1ahfl
 
   [!] IMPORTANTE — TECLADO EN GRUB
   ----------------------------------
