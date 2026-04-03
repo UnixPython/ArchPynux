@@ -1,0 +1,81 @@
+# ArchPynux Snapshot — Manual de reconstrucción e instalación
+
+## Archivos necesarios
+
+Debes descargar **todas las partes** del snapshot:
+
+```
+archpynux-snapshot_2.tar.001
+archpynux-snapshot_2.tar.002
+archpynux-snapshot_2.tar.003
+archpynux-snapshot_2.tar.004
+```
+
+Todos los archivos deben estar **en la misma carpeta** antes de reconstruir el archivo original.
+
+---
+
+# Reconstruir el archivo
+
+## En Linux / Arch / Termux
+
+Ejecuta en la carpeta donde están las partes:
+
+```
+cat archpynux-snapshot_2.tar.* > archpynux-snapshot_2.tar
+```
+
+Esto generará el archivo completo:
+
+```
+archpynux-snapshot_2.tar
+```
+
+Luego extrae el contenido:
+
+```
+tar -xf archpynux-snapshot_2.tar
+```
+
+---
+
+## En Windows
+
+1. Abre **Símbolo del sistema (cmd)** en la carpeta donde están los archivos.
+
+2. Ejecuta:
+
+```
+copy /b archpynux-snapshot_2.tar.001+archpynux-snapshot_2.tar.002+archpynux-snapshot_2.tar.003+archpynux-snapshot_2.tar.004 archpynux-snapshot_2.tar
+```
+
+3. Se generará:
+
+```
+archpynux-snapshot_2.tar
+```
+
+4. Extrae el archivo con **7-Zip** u otro programa compatible.
+
+---
+
+# Advertencia importante
+
+Este snapshot **no es un sistema operativo completo**.
+
+Requisitos:
+
+* Tener **Arch Linux base ya instalado**
+* Herramientas básicas del sistema (`bash`, `tar`, `pacman`, utilidades base)
+
+El snapshot solo contiene el **entorno y configuraciones de ArchPynux**.
+
+Si intentas usarlo sin una base de Arch Linux, **no funcionará correctamente**.
+
+---
+
+# Recomendaciones
+
+* Descarga **todas las partes completas** antes de reconstruir.
+* Si falta alguna parte, el archivo final estará **corrupto**.
+* Verifica que todos los archivos estén en la misma carpeta antes de ejecutar los comandos.
